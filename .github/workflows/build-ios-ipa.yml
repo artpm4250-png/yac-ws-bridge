@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '10.0.x'
+  DOTNET_VERSION: '10.0.100'
 
 jobs:
   build-ios:
@@ -20,7 +20,7 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
-          XCODE_ROOT=/Applications/Xcode_26.3.app
+          XCODE_ROOT=/Applications/Xcode_26.0.1.app
           ls -1 /Applications | grep -E '^Xcode' || true
           sudo xcode-select -s "$XCODE_ROOT/Contents/Developer"
           echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> "$GITHUB_ENV"
