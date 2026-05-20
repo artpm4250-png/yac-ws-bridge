@@ -21,7 +21,7 @@ jobs:
         run: |
           set -euo pipefail
           ls -1 /Applications | grep -E '^Xcode' || true
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-path
           xcrun --sdk iphonesimulator --show-sdk-path
