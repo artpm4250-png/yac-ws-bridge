@@ -52,19 +52,23 @@ jobs:
             -p:CodesignKey= \
             -p:CodesignProvision= \
             -p:EnableCodeSigning=false \
-            -p:ValidateXcodeVersion=false \
-            -o publish/ios
+            -p:ValidateXcodeVersion=false
 
       - name: Pack unsigned IPA
         working-directory: maui-client
         run: |
           set -euo pipefail
-          APP="$(find publish/ios -name '*.app' -type d | head -n 1)"
+          APP="$(find bin -name '*.app' -type d | head -n 1)"
+          if [ -z "$APP" ]; then
+            APP="$(find . -name '*.app' -type d | head -n 1)"
+          fi
           if [ -z "$APP" ]; then
             echo "No .app bundle found"
-            find publish/ios -maxdepth 4 -type f -o -type d
+            find . -maxdepth 8 \( -name '*.app' -o -name '*.ipa' -o -name '*.dSYM' \) -print
+            find bin obj publish -maxdepth 8 -type d 2>/dev/null | sed -n '1,240p'
             exit 1
           fi
+          echo "Packing $APP"
           rm -rf out Payload
           mkdir -p out Payload
           cp -R "$APP" Payload/
