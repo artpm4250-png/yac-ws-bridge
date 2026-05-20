@@ -20,8 +20,11 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
+          XCODE_ROOT=/Applications/Xcode_26.3.app
           ls -1 /Applications | grep -E '^Xcode' || true
-          sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+          sudo xcode-select -s "$XCODE_ROOT/Contents/Developer"
+          echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> "$GITHUB_ENV"
+          echo "DEVELOPER_DIR=$XCODE_ROOT/Contents/Developer" >> "$GITHUB_ENV"
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-path
           xcrun --sdk iphonesimulator --show-sdk-path
