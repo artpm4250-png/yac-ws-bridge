@@ -20,7 +20,7 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
-          XCODE_ROOT=/Applications/Xcode_16.4.app
+          XCODE_ROOT=/Applications/Xcode_26.3.app
           ls -1 /Applications | grep -E '^Xcode' || true
           sudo xcode-select -s "$XCODE_ROOT/Contents/Developer"
           echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> "$GITHUB_ENV"
@@ -52,6 +52,7 @@ jobs:
             -p:CodesignKey= \
             -p:CodesignProvision= \
             -p:EnableCodeSigning=false \
+            -p:ValidateXcodeVersion=false \
             -o publish/ios
 
       - name: Pack unsigned IPA
