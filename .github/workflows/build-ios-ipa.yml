@@ -17,6 +17,15 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          ls -1 /Applications | grep -E '^Xcode' || true
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          xcrun --sdk iphonesimulator --show-sdk-path
+
       - name: Restore MAUI workloads
         working-directory: maui-client
         run: dotnet workload restore BridgeToFreedom.csproj --ignore-failed-sources
