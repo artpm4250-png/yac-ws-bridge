@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '9.0.x'
+  DOTNET_VERSION: '9.0.100'
 
 jobs:
   build-ios:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Restore MAUI workloads
         working-directory: maui-client
-        run: dotnet workload restore BridgeToFreedom.csproj --ignore-failed-sources
+        run: dotnet workload restore BridgeToFreedom.csproj --ignore-failed-sources --skip-manifest-update
 
       - name: Publish iOS app
         working-directory: maui-client
