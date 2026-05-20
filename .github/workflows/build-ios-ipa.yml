@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '10.0.100'
+  DOTNET_VERSION: '9.0.x'
 
 jobs:
   build-ios:
@@ -20,7 +20,7 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
-          XCODE_ROOT=/Applications/Xcode_26.3.app
+          XCODE_ROOT=/Applications/Xcode_16.4.app
           ls -1 /Applications | grep -E '^Xcode' || true
           sudo xcode-select -s "$XCODE_ROOT/Contents/Developer"
           echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> "$GITHUB_ENV"
@@ -28,6 +28,13 @@ jobs:
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-path
           xcrun --sdk iphonesimulator --show-sdk-path
+
+      - name: Retarget MAUI project for runner
+        working-directory: maui-client
+        run: |
+          set -euo pipefail
+          perl -0pi -e 's/net10\.0-/net9.0-/g; s/Version="10\.0\.51"/Version="9.0.120"/g' BridgeToFreedom.csproj
+          grep -n "TargetFrameworks\\|PackageReference" BridgeToFreedom.csproj
 
       - name: Restore MAUI workloads
         working-directory: maui-client
@@ -37,7 +44,7 @@ jobs:
         working-directory: maui-client
         run: |
           dotnet publish BridgeToFreedom.csproj \
-            -f net10.0-ios \
+            -f net9.0-ios \
             -c Release \
             -p:RuntimeIdentifier=ios-arm64 \
             -p:ArchiveOnBuild=false \
@@ -45,7 +52,6 @@ jobs:
             -p:CodesignKey= \
             -p:CodesignProvision= \
             -p:EnableCodeSigning=false \
-            -p:ValidateXcodeVersion=false \
             -o publish/ios
 
       - name: Pack unsigned IPA
