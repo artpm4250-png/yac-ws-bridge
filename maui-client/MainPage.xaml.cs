@@ -47,7 +47,7 @@ public partial class MainPage : ContentPage
             var url = BridgeUrlEntry.Text?.Trim() ?? "";
             if (!url.StartsWith("wss://"))
             {
-                await DisplayAlertAsync("Error", "Bridge URL must start with wss://", "OK");
+                await DisplayAlert("Error", "Bridge URL must start with wss://", "OK");
                 return;
             }
 
@@ -76,7 +76,7 @@ public partial class MainPage : ContentPage
             var text = await Clipboard.Default.GetTextAsync();
             if (string.IsNullOrWhiteSpace(text) || !text.StartsWith("btf://"))
             {
-                await DisplayAlertAsync("Import", "No btf:// URL found in clipboard", "OK");
+                await DisplayAlert("Import", "No btf:// URL found in clipboard", "OK");
                 return;
             }
 
@@ -128,17 +128,17 @@ public partial class MainPage : ContentPage
 
         if (string.IsNullOrEmpty(url) || !url.StartsWith("wss://"))
         {
-            await DisplayAlertAsync("Error", "Bridge URL must start with wss://", "OK");
+            await DisplayAlert("Error", "Bridge URL must start with wss://", "OK");
             return;
         }
         if (string.IsNullOrEmpty(token))
         {
-            await DisplayAlertAsync("Error", "Auth token is required", "OK");
+            await DisplayAlert("Error", "Auth token is required", "OK");
             return;
         }
         if (!int.TryParse(portStr, out var port) || port < 1 || port > 65535)
         {
-            await DisplayAlertAsync("Error", "Port must be 1-65535", "OK");
+            await DisplayAlert("Error", "Port must be 1-65535", "OK");
             return;
         }
 
