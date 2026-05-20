@@ -88,12 +88,27 @@ function httpGet(url, headers) {
     const mod = url.startsWith('https') ? https : http;
     const agent = url.startsWith('https') ? httpsAgent : httpAgent;
     const p = new URL(url);
+    let settled = false;
     const req = mod.request({
       hostname: p.hostname, port: p.port || (p.protocol === 'https:' ? 443 : 80),
       path: p.pathname + p.search, method: 'GET', agent,
       headers: headers || {},
-    }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve({ status: res.statusCode, body: d })); });
-    req.on('error', reject);
+    }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => {
+      if (settled) return;
+      settled = true;
+      resolve({ status: res.statusCode, body: d });
+    }); });
+    req.setTimeout(1200, () => {
+      if (settled) return;
+      settled = true;
+      req.destroy(new Error('HTTP recovery timeout'));
+      reject(new Error('HTTP recovery timeout'));
+    });
+    req.on('error', err => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
     req.end();
   });
 }
@@ -142,7 +157,7 @@ async function fetchConnIds(iamToken) {
   console.warn('fetchConnIds: all retries exhausted, proceeding without conn-ids');
 }
 
-_initPromise = fetchConnIds();
+_initPromise = null;
 
 // Try to learn the missing peer's connId via the adapter HTTP endpoint.
 // Skips if called within the last 2 seconds to avoid hammering.
@@ -310,7 +325,6 @@ async function handle(event, context) {
           console.error(`adapter HELLO auth failed ver=${ver} tokenMatch=${tok === AUTH_TOKEN}`);
           return binaryResp(encodeControl(MSG_HELLO_ERR, Buffer.from('auth failed')));
         }
-        if (helpers.size === 0) await ensurePeerKnown('helper', token);
         // Notify EVERY known helper that the adapter is here.
         for (const [hConnId] of Array.from(helpers)) {
           console.log(`adapter HELLO: notifying helper ${hConnId} of adapter connId`);
@@ -332,7 +346,6 @@ async function handle(event, context) {
           console.log(`adapter PING: re-learned adapterConnId=${connId} (was ${adapterConnId || 'null'})`);
           adapterConnId = connId;
         }
-        if (helpers.size === 0) await ensurePeerKnown('helper', token);
         // Cross-notify each helper of the adapter (covers cross-instance state loss).
         for (const [hConnId] of Array.from(helpers)) {
           console.log(`adapter PING: cross-notifying helper ${hConnId} of adapter connId`);
@@ -346,7 +359,6 @@ async function handle(event, context) {
         return binaryResp(encodeControl(MSG_PONG, encodePong(token)));
       }
       if (type === MSG_SYNC) {
-        if (helpers.size === 0) await ensurePeerKnown('helper', token);
         if (helpers.size === 0) {
           console.log('adapter SYNC -> PEER_GONE (no helpers)');
           return binaryResp(encodeControl(MSG_PEER_GONE));
@@ -405,20 +417,12 @@ async function handle(event, context) {
     }
     if (ev === 'MESSAGE') {
       // Lazy registration in case CONNECT was processed by a different
-      // function instance (state is per-instance for serverless). Before
-      // allocating a fresh shortId, sync from the adapter's /conn-ids so we
-      // don't reuse a shortId that the adapter (or another instance) already
-      // assigned elsewhere.
+      // function instance. Register the current helper immediately; waiting
+      // on /conn-ids here can deadlock first-time helper handshakes.
       let shortId = helpers.get(connId);
       if (!shortId) {
-        await ensurePeerKnown('helper', token, connId);
-        shortId = helpers.get(connId);
-        if (!shortId) {
-          shortId = rememberHelper(connId);
-          console.log(`helper connId=${connId} recovered from message (new shortId=${shortId}, usedSoFar=${usedShortIds.size})`);
-        } else {
-          console.log(`helper connId=${connId} recovered from /conn-ids shortId=${shortId}`);
-        }
+        shortId = rememberHelper(connId);
+        console.log(`helper connId=${connId} recovered from message (new shortId=${shortId}, usedSoFar=${usedShortIds.size})`);
       }
 
       const buf = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : Buffer.from(event.body || '');
